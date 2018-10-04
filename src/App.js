@@ -2,11 +2,15 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Sound from 'react-sound';
-
+import LineChart from 'react-linechart';
 import mp3 from './airhorn.mp3'
 
 //Bootstrap stuff
 var Button = require('react-bootstrap/lib/Button');
+var ButtonGroup = require('react-bootstrap/lib/ButtonGroup');
+var ButtonToolbar = require('react-bootstrap/lib/ButtonToolbar');
+var ToggleButton = require('react-bootstrap/lib/ToggleButton');
+var ToggleButtonGroup= require('react-bootstrap/lib/ToggleButtonGroup');
 var Form = require('react-bootstrap/lib/Form');
 var Row = require('react-bootstrap/lib/Row');
 var Col = require('react-bootstrap/lib/Col');
@@ -23,6 +27,7 @@ class App extends Component {
         this.func = this.func.bind(this);
         this.resetOpacity = this.resetOpacity.bind(this);
         this.updateCounter = this.updateCounter.bind(this);
+        this.decrease_y_value = this.decrease_y_value.bind(this);
         this.stopSound = this.stopSound.bind(this);
         this.initiate_or_stop_sequence = this.initiate_or_stop_sequence.bind(this);
 
@@ -37,12 +42,19 @@ class App extends Component {
             buttonText : "Initiera Dryckessekvens",
             buttonClass : "success",
             showInformation : "none",
-            play_sound : "STOPPED"
+            play_sound : "STOPPED",
+            graph_min : 0,
+            current_y_value : 0,
+            lower_y_interval : "",
+            graph_max : 10,
+            graph_data_points : [{color : "steelblue", points : [] } ],
+            toggle_mythic : false,
+            toggle_prediction : false
         }
     }
 
     handleChange(e) {
-        if (e.target.value <= 300) {
+        if (e.target.value <= 400) {
             this.setState({frequencyValue : e.target.value})
         } else {
             console.log("too high")
@@ -59,10 +71,20 @@ class App extends Component {
         })
     }
 
+
+    toggleMythic () {
+    
+    }
+
+    togglePrediction () {
+    
+    }
     updateCounter() {
         var oldVal = this.state.counter;
         var newVal = oldVal + 1;
-        this.setState({counter : newVal})
+        this.setState({
+            counter : newVal,
+        })
     }
 
     stopSound() {
@@ -70,6 +92,16 @@ class App extends Component {
             play_sound : "STOPPED"
         })
     }
+
+    decrease_y_value() {
+        var oldY = this.state.current_y_value;
+        var newY = 0;
+        if (oldY > 0) {
+            newY = oldY - 1
+        }
+        this.setState({current_y_value : newY})
+    }
+
 
     func() {
         //Trigger a drink
@@ -79,10 +111,18 @@ class App extends Component {
             console.log("DRINK!!!!")
             var oldBeer = this.state.beerValue;
             var newBeer = oldBeer + 1;
+            var oldPoints = this.state.graph_data_points[0].points;
+            var oldY = this.state.current_y_value;
+            var newY = oldY + 5
+            var point = {x : this.state.counter, y: newY}
+            var newPoints = oldPoints.push(point)
+            oldPoints[0].points = newPoints
             this.setState({
                 opacityValue : 1,
                 beerValue : newBeer,
-                play_sound : "PLAYING"
+                graph_data_points : [{color : "steelblue", points : oldPoints}],
+                play_sound : "PLAYING",
+                current_y_value : newY
             })
             setTimeout(this.resetOpacity, 3000)
             setTimeout(this.stopSound, 1000)
@@ -90,7 +130,7 @@ class App extends Component {
     }
 
     calc_flame_opacity(freqValue) {
-        var normalizedFlame = freqValue / 300
+        var normalizedFlame = freqValue / 400
         return normalizedFlame
     }
 
@@ -102,6 +142,7 @@ class App extends Component {
                 buttonClass : "danger",
                 interValId : setInterval(this.func, 3000),
                 counterInterval : setInterval(this.updateCounter, 1000),
+                lower_y_interval: setInterval(this.decrease_y_value, 5000),
                 run : false,
                 showInformation : "block"
             })
@@ -117,6 +158,7 @@ class App extends Component {
             })
             clearInterval(this.state.interValId)
             clearInterval(this.state.counterInterval)
+            clearInterval(this.state.lower_y_interval)
         }
     }
 
@@ -154,18 +196,24 @@ class App extends Component {
         left: "10%"
     }
 
+    var radioDivStyle = {
+        margin: "auto",
+        width: "35%"
+    }
+
+   
     return (
       <div className="App">
         <div style={infoDivStyle}>
+            <div>
             <h2>Osäker på när det är dags för vätskepaus?</h2> 
             <h2>Använd vår lösning som med hjälp av machine learning, AI, blockchain, och management beräknar när det är dags att återfukta.</h2>
-            <h2>Varför spela primitiva dryckesspel som kräver mänsklig interaktion?</h2>
             <h1>BEERCALC - Låt maskinerna göra jobbet</h1>
+            </div>
             <div style={formDivStyle}>
             <form>
                 <FormGroup>
-
-                <ControlLabel>Vilken frekvens (0 - 300) önskas?</ControlLabel>
+                <ControlLabel>Vilken frekvens (0 - 400) önskas?</ControlLabel>
                 <FormControl
                     type="number"
                     max="300"
@@ -177,6 +225,16 @@ class App extends Component {
             </form>
             </div>
             <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle={this.state.buttonClass} >{this.state.buttonText}</Button>
+        {/*
+            <div style={radioDivStyle}>
+            <h2>För avancerade användare</h2>
+                <ButtonGroup name="advanced">
+                    <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle="primary" >Advanced Averaging Mode (TM)</Button>
+                    <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle="danger" >Mythic Difficulty</Button>
+                    <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle="success" >Normal Difficulty</Button>
+                </ButtonGroup>
+            </div>
+        */}
         </div>
         <Row>
             <Col xs={4}> 
@@ -188,11 +246,18 @@ class App extends Component {
                 <img style={flameImgStyle} src={require('./media/flames.png')} />
             </Col>
             <Col xs={4} style={{opacity : this.state.opacityValue}}>
-                <img id="prippan" style={{height: "60vh"}} src={require('./media/pripps.png')} />
+                <img id="prippan" style={{height: "50vh"}} src={require('./media/pripps.png')} />
             </Col>
             <Col xs={4}>
-                <div style={{display : this.state.showInformation, marginTop : "-20%", color: "white"}} xs={4}>
+                <div style={{display : this.state.showInformation, marginLeft: "-10%", marginTop : "-20%", color: "white"}} xs={4}>
                     <h2>{this.state.counter}</h2>
+                    <LineChart 
+                        width={600}
+                        height={400}
+                        data={this.state.graph_data_points}
+                        yMin = "0"
+                    />
+                    <h2>BEVITTNA VETENSKAPEN</h2>
                 </div>
             </Col>
         </Row>
