@@ -7,6 +7,9 @@ import mp3 from './airhorn.mp3'
 
 import still from './media/frame00.gif';
 import storm from './media/storm.gif';
+import frog from './media/frog.png';
+import hellfrog from './media/hellfrog.png';
+import tsunami from './media/hellstorm.gif';
 
 //Bootstrap stuff
 var Button = require('react-bootstrap/lib/Button');
@@ -34,6 +37,8 @@ class App extends Component {
         this.decrease_y_value = this.decrease_y_value.bind(this);
         this.stopSound = this.stopSound.bind(this);
         this.initiate_or_stop_sequence = this.initiate_or_stop_sequence.bind(this);
+        this.toggleMythic = this.toggleMythic.bind(this);
+        this.togglePrediction = this.togglePrediction.bind(this);
 
         this.state = {
             frequencyValue : 0,
@@ -48,11 +53,19 @@ class App extends Component {
             showInformation : "none",
             play_sound : "STOPPED",
             graph_min : 0,
+            frog_src : frog,
             current_y_value : 0,
             lower_y_interval : "",
             graph_max : 10,
+            mythicText : "Enable Mythic Difficulty",
+            mythicClass : "danger",
             graph_data_points : [{color : "steelblue", points : [] } ],
             toggle_mythic : false,
+            average_enabled : false,
+            averaging : 0,
+            show_advanced : "none",
+            averageText : "Advanced Averaging Mode (TM)",
+            averageClass : "primary",
             toggle_prediction : false
         }
     }
@@ -81,10 +94,41 @@ class App extends Component {
 
 
     toggleMythic () {
+        if (!this.state.toggle_mythic) {
+            document.body.style.backgroundImage = "url(" + tsunami + ")"
+            this.setState({
+                toggle_mythic : true,
+                mythicText : "Disable Mythic Difficulty",
+                mythicClass : "success",
+                frog_src : hellfrog
+            })
+        } else {
+            document.body.style.backgroundImage = "url(" + storm + ")"
+            this.setState({
+                toggle_mythic : false,
+                mythicText : "Enable Mythic Difficulty",
+                mythicClass : "danger",
+                frog_src : frog
+            })
+        }
     
     }
 
     togglePrediction () {
+        if (!this.state.average_enabled) {
+            this.setState({
+                average_enabled: true,
+                averageText : "Disable Advanced Averaging",
+                averageClass : "success",
+            })
+        } else {
+            this.setState({
+                average_enabled: false,
+                averaging : 0,
+                averageText : "Advanced Averaging Mode (TM)",
+                averageClass : "primary",
+            })
+        }
     
     }
     updateCounter() {
@@ -116,7 +160,12 @@ class App extends Component {
         //Trigger a drink
         var rnd = Math.floor(Math.random() * 1000)
         console.log(rnd)
-        if (rnd < this.state.frequencyValue) {
+        var oldFreq = this.state.frequencyValue;
+        if (this.state.average_enabled) {
+            oldFreq = oldFreq + this.state.averaging
+            console.log(oldFreq)
+        }
+        if (rnd < oldFreq || this.state.toggle_mythic) {
             console.log("DRINK!!!!")
             var oldBeer = this.state.beerValue;
             var newBeer = oldBeer + 1;
@@ -128,6 +177,7 @@ class App extends Component {
             oldPoints[0].points = newPoints
             this.setState({
                 opacityValue : 1,
+                averaging : 0,
                 beerValue : newBeer,
                 graph_data_points : [{color : "steelblue", points : oldPoints}],
                 play_sound : "PLAYING",
@@ -135,6 +185,16 @@ class App extends Component {
             })
             setTimeout(this.resetOpacity, 3000)
             setTimeout(this.stopSound, 1000)
+        } else {
+            var oldAverage = this.state.averaging;
+            var newAverage = 0;
+            if (this.state.average_enabled) {
+                newAverage = oldAverage + 20
+            }
+            this.setState({
+                averaging : newAverage
+            })
+            console.log("Increased average bonus to " + this.state.averaging)
         }
     }
 
@@ -150,6 +210,7 @@ class App extends Component {
             this.setState({
                 buttonText : "Avsluta Dryckessekvens",
                 buttonClass : "danger",
+                show_advanced : "block",
                 interValId : setInterval(this.func, 3000),
                 counterInterval : setInterval(this.updateCounter, 1000),
                 lower_y_interval: setInterval(this.decrease_y_value, 5000),
@@ -163,6 +224,11 @@ class App extends Component {
                 buttonText : "Initiera Dryckessekvens",
                 buttonClass : "success",
                 run : true,
+                show_advanced : "none",
+                toggle_mythic : false,
+                frog_src : frog,
+                mythicClass : "danger",
+                mythicText : "Enable Mythic Difficulty",
                 counter : 0,
                 beerValue : 0,
                 showInformation : "none"
@@ -208,6 +274,7 @@ class App extends Component {
     }
 
     var radioDivStyle = {
+        display : this.state.show_advanced,
         margin: "auto",
         width: "35%"
     }
@@ -236,16 +303,15 @@ class App extends Component {
             </form>
             </div>
             <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle={this.state.buttonClass} >{this.state.buttonText}</Button>
-        {/*
+            {
             <div style={radioDivStyle}>
             <h2>För avancerade användare</h2>
                 <ButtonGroup name="advanced">
-                    <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle="primary" >Advanced Averaging Mode (TM)</Button>
-                    <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle="danger" >Mythic Difficulty</Button>
-                    <Button onClick={this.initiate_or_stop_sequence} style={buttonStyle} bsStyle="success" >Normal Difficulty</Button>
+                {/* <Button onClick={this.togglePrediction} style={buttonStyle} bsStyle={this.state.averageClass} >{this.state.averageText}</Button> */}
+                    <Button onClick={this.toggleMythic} style={buttonStyle} bsStyle={this.state.mythicClass} >{this.state.mythicText}</Button>
                 </ButtonGroup>
             </div>
-        */}
+            } 
         </div>
         <Row>
             <Col xs={4}> 
@@ -253,7 +319,7 @@ class App extends Component {
                     <h2 style={{color : "white"}}>Beer-O-Meter</h2>
                     <h3 style={{color : "white"}}>{this.state.beerValue}</h3>
                 </div>
-                <img style={frogImgStyle} src={require('./media/frog.png')} />
+                <img style={frogImgStyle} src={this.state.frog_src} />
                 <img style={flameImgStyle} src={require('./media/flames.png')} />
             </Col>
             <Col xs={4} style={{opacity : this.state.opacityValue}}>
