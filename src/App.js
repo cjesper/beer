@@ -5,6 +5,9 @@ import Sound from 'react-sound';
 import LineChart from 'react-linechart';
 import mp3 from './airhorn.mp3'
 
+import still from './media/frame00.gif';
+import storm from './media/storm.gif';
+
 //Bootstrap stuff
 var Button = require('react-bootstrap/lib/Button');
 var ButtonGroup = require('react-bootstrap/lib/ButtonGroup');
@@ -17,6 +20,7 @@ var Col = require('react-bootstrap/lib/Col');
 var FormGroup = require('react-bootstrap/lib/FormGroup');
 var FormControl = require('react-bootstrap/lib/FormControl');
 var ControlLabel = require('react-bootstrap/lib/ControlLabel');
+
 
 class App extends Component {
     constructor(props) {
@@ -53,6 +57,10 @@ class App extends Component {
         }
     }
 
+    componentWillMount() {
+        document.body.style.backgroundImage = "url(" + still + ")"
+    }
+
     handleChange(e) {
         if (e.target.value <= 400) {
             this.setState({frequencyValue : e.target.value})
@@ -81,6 +89,7 @@ class App extends Component {
     }
     updateCounter() {
         var oldVal = this.state.counter;
+        var bg = "./media/storm.gif"
         var newVal = oldVal + 1;
         this.setState({
             counter : newVal,
@@ -137,6 +146,7 @@ class App extends Component {
     initiate_or_stop_sequence () {
         if (this.state.run) {
             console.log("RUNNING")
+            document.body.style.backgroundImage = "url(" + storm + ")"
             this.setState({
                 buttonText : "Avsluta Dryckessekvens",
                 buttonClass : "danger",
@@ -147,7 +157,8 @@ class App extends Component {
                 showInformation : "block"
             })
         } else {
-        console.log("STOP")
+            console.log("STOP")
+            document.body.style.backgroundImage = "url(" + still + ")"
             this.setState({
                 buttonText : "Initiera Dryckessekvens",
                 buttonClass : "success",
